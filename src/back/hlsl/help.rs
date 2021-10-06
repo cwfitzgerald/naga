@@ -25,7 +25,7 @@
 //! ```
 
 use super::{super::FunctionCtx, BackendResult, Error};
-use crate::{arena::Handle, proc::NameKey};
+use crate::{arena::Handle, proc::NameKey, MathFunction};
 use std::fmt::Write;
 
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
@@ -44,6 +44,12 @@ pub(super) struct WrappedImageQuery {
 #[derive(Clone, Copy, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
 pub(super) struct WrappedConstructor {
     pub(super) ty: Handle<crate::Type>,
+}
+
+#[derive(Debug, Hash, Eq, PartialEq)]
+pub(super) struct WrappedMathFunction {
+    pub(super) fun: MathFunction,
+    pub(super) ty: Option<Handle<crate::Type>>,
 }
 
 /// HLSL backend requires its own `ImageQuery` enum.
@@ -418,6 +424,90 @@ impl<'a, W: Write> super::Writer<'a, W> {
         Ok(())
     }
 
+    fn math_function_requires_wrapper(fun: MathFunction) -> bool {
+        match fun {
+            MathFunction::ExtractBits
+            | MathFunction::InsertBits
+            | MathFunction::Pack4x8snorm
+            | MathFunction::Pack4x8unorm
+            | MathFunction::Pack2x16snorm
+            | MathFunction::Pack2x16unorm
+            | MathFunction::Pack2x16float
+            | MathFunction::Unpack4x8snorm
+            | MathFunction::Unpack4x8unorm
+            | MathFunction::Unpack2x16snorm
+            | MathFunction::Unpack2x16unorm
+            | MathFunction::Unpack2x16float => true,
+            _ => false,
+        }
+    }
+
+    fn write_wrapped_math_function(
+        &mut self,
+        module: &crate::Module,
+        wrapped: &WrappedMathFunction,
+    ) -> BackendResult {
+        use crate::back::INDENT;
+        match wrapped.fun {
+            MathFunction::ExtractBits => {
+                let overload_ty = wrapped.ty.unwrap();
+                let kind = module.types[overload_ty].inner.scalar_kind().unwrap();
+                self.write_type(module, overload_ty)?;
+                write!(self.out, " NagaExtractBits(")?;
+                self.write_type(module, overload_ty)?;
+                if kind == crate::ScalarKind::Uint {
+                    writeln!(
+                        self.out,
+                        " base, uint offset, uint count) {{\
+                        {0}uint clamp_offset = min(offset, 31);\
+                        {0}uint clamp_count = min(count, 31 - clamp_offset);\
+                        {0}uint mask = (1 << clamp_count) - 1;\
+                        {0}return (base >> clamp_offset) & mask;\
+                        }}",
+                        INDENT
+                    )?;
+                } else if kind == crate::ScalarKind::Sint {
+                    writeln!(
+                        self.out,
+                        " base, uint offset, uint count) {{\
+                        {0}uint clamp_offset = min(offset, 31);\
+                        {0}uint clamp_count = min(count, 31 - clamp_offset);\
+                        {0}uint mask = (1 << clamp_count) - 1;
+                        {0}",
+                        INDENT
+                    )?;
+                    self.write_type(module, overload_ty)?;
+                    writeln!(
+                        self.out,
+                        "{0} masked = (base >> clamp_offset) & mask;\
+                        {0}uint extend_shift = (32 - clamp_count) & 31;\
+                        {0}return (masked << extend_shift) >> extend_shift;
+                        }}",
+                        INDENT
+                    )?;
+                }
+            }
+            MathFunction::InsertBits => {
+                let overload_ty = wrapped.ty.unwrap();
+                self.write_type(module, overload_ty)?;
+                write!(self.out, " NagaInsertBits(")?;
+                self.write_type(module, overload_ty)?;
+                writeln!(
+                    self.out,
+                    " base, uint offset, uint count) {{\
+                    {0}uint clamp_offset = clamp(offset, 0, 31);\
+                    {0}uint clamp_count = clamp(count, 0, 31 - offset);\
+                    {0}uint mask = (1 << clamp_count) - 1;\
+                    {0}return (base >> offset) & mask;\
+                    }}",
+                    INDENT
+                )?;
+            }
+        }
+
+        Ok(())
+    }
+
     /// Helper function that write wrapped function for `Expression::ImageQuery` and `Expression::ArrayLength`
     ///
     /// <https://docs.microsoft.com/en-us/windows/win32/direct3dhlsl/dx-graphics-hlsl-to-getdimensions>
@@ -480,6 +570,25 @@ impl<'a, W: Write> super::Writer<'a, W> {
                     if !self.wrapped.constructors.contains(&constructor) {
                         self.write_wrapped_constructor_function(module, constructor)?;
                         self.wrapped.constructors.insert(constructor);
+                    }
+                }
+                crate::Expression::Math { fun, arg, .. } => {
+                    if !Self::math_function_requires_wrapper(fun) {
+                        continue;
+                    }
+
+                    let ty = if fun == MathFunction::ExtractBits || fun == MathFunction::InsertBits
+                    {
+                        Some(func_ctx.info[arg].ty.handle().unwrap())
+                    } else {
+                        None
+                    };
+
+                    let wrapped = WrappedMathFunction { fun, ty };
+
+                    if !self.wrapped.math_functions.contains(&wrapped) {
+                        self.write_wrapped_math_function(&wrapped)?;
+                        self.wrapped.math_functions.insert(wrapped);
                     }
                 }
                 _ => {}

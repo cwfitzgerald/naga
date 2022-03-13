@@ -842,6 +842,17 @@ impl Writer {
                         crate::ArraySize::Dynamic => Instruction::type_runtime_array(id, type_id),
                     }
                 }
+                crate::TypeInner::BindingArray { base, size } => {
+                    let type_id = self.get_type_id(LookupType::Handle(base));
+                    // TODO: We have no idea what binding this could be, so we can't attach a size to it.
+                    match size {
+                        crate::ArraySize::Constant(const_handle) => {
+                            let length_id = self.constant_ids[const_handle.index()];
+                            Instruction::type_array(id, type_id, length_id)
+                        }
+                        crate::ArraySize::Dynamic => Instruction::type_runtime_array(id, type_id),
+                    }
+                }
                 crate::TypeInner::Struct {
                     ref members,
                     span: _,

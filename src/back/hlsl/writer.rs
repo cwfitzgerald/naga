@@ -568,7 +568,12 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 register
             }
             crate::AddressSpace::Handle => {
-                let register = match *inner {
+                let handle_ty = match *inner {
+                    TypeInner::BindingArray { ref base, .. } => &module.types[*base].inner,
+                    _ => inner,
+                };
+
+                let register = match *handle_ty {
                     TypeInner::Sampler { .. } => "s",
                     // all storage textures are UAV, unconditionally
                     TypeInner::Image {
@@ -589,6 +594,16 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         if let Some(ref binding) = global.binding {
             // this was already resolved earlier when we started evaluating an entry point.
             let bt = self.options.resolve_resource_binding(binding).unwrap();
+
+            // need to write the binding array size if the type was emitted with `write_type`
+            if let TypeInner::BindingArray { size, .. } = module.types[global.ty].inner {
+                if let Some(overridden_size) = bt.binding_array_size {
+                    write!(self.out, "[{}]", overridden_size)?;
+                } else {
+                    self.write_array_size(module, size)?;
+                }
+            }
+
             write!(self.out, " : register({}{}", register_ty, bt.register)?;
             if bt.space != 0 {
                 write!(self.out, ", space{}", bt.space)?;
@@ -690,7 +705,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 let size = module.constants[const_handle].to_array_length().unwrap();
                 write!(self.out, "{}", size)?;
             }
-            crate::ArraySize::Dynamic => unreachable!(),
+            crate::ArraySize::Dynamic => {}
         }
 
         write!(self.out, "]")?;
@@ -788,7 +803,9 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
         match *inner {
             TypeInner::Struct { .. } => write!(self.out, "{}", self.names[&NameKey::Type(ty)])?,
             // hlsl array has the size separated from the base type
-            TypeInner::Array { base, .. } => self.write_type(module, base)?,
+            TypeInner::Array { base, .. } | TypeInner::BindingArray { base, .. } => {
+                self.write_type(module, base)?
+            }
             ref other => self.write_value_type(module, other)?,
         }
 
@@ -847,7 +864,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
             // HLSL arrays are written as `type name[size]`
             // Current code is written arrays only as `[size]`
             // Base `type` and `name` should be written outside
-            TypeInner::Array { size, .. } => {
+            TypeInner::Array { size, .. } | TypeInner::BindingArray { size, .. } => {
                 self.write_array_size(module, size)?;
             }
             _ => {

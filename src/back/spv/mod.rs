@@ -607,6 +607,17 @@ bitflags::bitflags! {
     }
 }
 
+#[derive(Clone, Debug, Default, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize))]
+#[cfg_attr(feature = "deserialize", derive(serde::Deserialize))]
+pub struct BindingInfo {
+    /// If the binding is an unsized binding array, this overrides the size.
+    pub binding_array_size: Option<u32>,
+}
+
+// Using `BTreeMap` instead of `HashMap` so that we can hash itself.
+pub type BindingMap = std::collections::BTreeMap<crate::ResourceBinding, BindingInfo>;
+
 #[derive(Debug, Clone)]
 pub struct Options {
     /// (Major, Minor) target version of the SPIR-V.
@@ -614,6 +625,9 @@ pub struct Options {
 
     /// Configuration flags for the writer.
     pub flags: WriterFlags,
+
+    /// Map of resources to information about the binding.
+    pub binding_map: BindingMap,
 
     /// If given, the set of capabilities modules are allowed to use. Code that
     /// requires capabilities beyond these is rejected with an error.
@@ -637,6 +651,7 @@ impl Default for Options {
         Options {
             lang_version: (1, 0),
             flags,
+            binding_map: BindingMap::default(),
             capabilities: None,
             bounds_check_policies: crate::proc::BoundsCheckPolicies::default(),
         }

@@ -376,7 +376,9 @@ impl super::Validator {
             }
             crate::AddressSpace::Handle => {
                 match types[var.ty].inner {
-                    crate::TypeInner::Image { .. } | crate::TypeInner::Sampler { .. } => {}
+                    crate::TypeInner::Image { .. }
+                    | crate::TypeInner::Sampler { .. }
+                    | crate::TypeInner::BindingArray { .. } => {}
                     _ => {
                         return Err(GlobalVariableError::InvalidType(var.space));
                     }

@@ -1,0 +1,22 @@
+// language: metal2.0
+#include <metal_stdlib>
+#include <simd/simd.h>
+
+using metal::uint;
+
+struct VertexIn {
+    uint index;
+};
+
+struct main_Input {
+    uint index [[attribute(0)]];
+};
+struct main_Output {
+    metal::float4 member [[position]];
+};
+vertex main_Output main_(
+  main_Input varyings [[stage_in]]
+) {
+    const VertexIn in = { varyings.index };
+    return main_Output { metal::float4(0.0, 0.0, 0.0, 1.0) };
+}

@@ -188,7 +188,10 @@ impl crate::TypeInner {
             | Self::Pointer { .. }
             | Self::ValuePointer { .. }
             | Self::Struct { .. } => true,
-            Self::Array { .. } | Self::Image { .. } | Self::Sampler { .. } => false,
+            Self::Array { .. }
+            | Self::Image { .. }
+            | Self::Sampler { .. }
+            | Self::BindingArray { .. } => false,
         }
     }
 

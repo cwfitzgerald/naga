@@ -553,9 +553,9 @@ impl crate::TypeInner {
                 match size {
                     crate::ArraySize::Constant(size) => {
                         let size = constants[size].name.as_deref().unwrap_or("unknown");
-                        format!("{}[{}]", base, size)
+                        format!("array<{}, {}>", base, size)
                     }
-                    crate::ArraySize::Dynamic => format!("{}[]", base),
+                    crate::ArraySize::Dynamic => format!("array<{}>", base),
                 }
             }
             Ti::Struct { .. } => {
@@ -607,6 +607,17 @@ impl crate::TypeInner {
                 )
             }
             Ti::Sampler { .. } => "sampler".to_string(),
+            Ti::BindingArray { base, size, .. } => {
+                let member_type = &types[base];
+                let base = member_type.name.as_deref().unwrap_or("unknown");
+                match size {
+                    crate::ArraySize::Constant(size) => {
+                        let size = constants[size].name.as_deref().unwrap_or("unknown");
+                        format!("binding_array<{}, {}>", base, size)
+                    }
+                    crate::ArraySize::Dynamic => format!("binding_array<{}>", base),
+                }
+            }
         }
     }
 }
@@ -654,7 +665,7 @@ mod type_inner_tests {
             stride: 4,
             size: crate::ArraySize::Constant(c),
         };
-        assert_eq!(array.to_wgsl(&types, &constants), "MyType1[C]");
+        assert_eq!(array.to_wgsl(&types, &constants), "array<MyType1, C>");
 
         let mat = crate::TypeInner::Matrix {
             rows: crate::VectorSize::Quad,
@@ -699,6 +710,15 @@ mod type_inner_tests {
         assert_eq!(
             img3.to_wgsl(&types, &constants),
             "texture_depth_multisampled_2d"
+        );
+
+        let array = crate::TypeInner::BindingArray {
+            base: mytype1,
+            size: crate::ArraySize::Constant(c),
+        };
+        assert_eq!(
+            array.to_wgsl(&types, &constants),
+            "binding_array<MyType1, C>"
         );
     }
 }
@@ -3015,6 +3035,20 @@ impl Parser {
                     self.layouter[base].to_stride()
                 };
                 crate::TypeInner::Array { base, size, stride }
+            }
+            "binding_array" => {
+                lexer.expect_generic_paren('<')?;
+                let (base, _access) = self.parse_type_decl(lexer, None, type_arena, const_arena)?;
+                let size = if lexer.skip(Token::Separator(',')) {
+                    let const_handle =
+                        self.parse_const_expression(lexer, type_arena, const_arena)?;
+                    crate::ArraySize::Constant(const_handle)
+                } else {
+                    crate::ArraySize::Dynamic
+                };
+                lexer.expect_generic_paren('>')?;
+
+                crate::TypeInner::BindingArray { base, size }
             }
             "sampler" => crate::TypeInner::Sampler { comparison: false },
             "sampler_comparison" => crate::TypeInner::Sampler { comparison: true },

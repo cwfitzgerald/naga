@@ -1646,7 +1646,7 @@ impl Parser {
                     let (image, image_span) =
                         self.parse_general_expression_with_span(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
-                    let (sampler_name, sampler_span) = lexer.next_ident_with_span()?;
+                    let sampler_expr = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
                     let coordinate = self.parse_general_expression(lexer, ctx.reborrow())?;
                     let sc = ctx.prepare_sampling(image, image_span)?;
@@ -1664,7 +1664,7 @@ impl Parser {
                     lexer.close_arguments()?;
                     crate::Expression::ImageSample {
                         image: sc.image,
-                        sampler: ctx.lookup_ident.lookup(sampler_name, sampler_span)?.handle,
+                        sampler: sampler_expr,
                         gather: None,
                         coordinate,
                         array_index,
@@ -1679,7 +1679,7 @@ impl Parser {
                     let (image, image_span) =
                         self.parse_general_expression_with_span(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
-                    let (sampler_name, sampler_span) = lexer.next_ident_with_span()?;
+                    let sampler_expr = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
                     let coordinate = self.parse_general_expression(lexer, ctx.reborrow())?;
                     let sc = ctx.prepare_sampling(image, image_span)?;
@@ -1699,7 +1699,7 @@ impl Parser {
                     lexer.close_arguments()?;
                     crate::Expression::ImageSample {
                         image: sc.image,
-                        sampler: ctx.lookup_ident.lookup(sampler_name, sampler_span)?.handle,
+                        sampler: sampler_expr,
                         gather: None,
                         coordinate,
                         array_index,
@@ -1714,7 +1714,7 @@ impl Parser {
                     let (image, image_span) =
                         self.parse_general_expression_with_span(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
-                    let (sampler_name, sampler_span) = lexer.next_ident_with_span()?;
+                    let sampler_expr = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
                     let coordinate = self.parse_general_expression(lexer, ctx.reborrow())?;
                     let sc = ctx.prepare_sampling(image, image_span)?;
@@ -1734,7 +1734,7 @@ impl Parser {
                     lexer.close_arguments()?;
                     crate::Expression::ImageSample {
                         image: sc.image,
-                        sampler: ctx.lookup_ident.lookup(sampler_name, sampler_span)?.handle,
+                        sampler: sampler_expr,
                         gather: None,
                         coordinate,
                         array_index,
@@ -1749,7 +1749,7 @@ impl Parser {
                     let (image, image_span) =
                         self.parse_general_expression_with_span(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
-                    let (sampler_name, sampler_span) = lexer.next_ident_with_span()?;
+                    let sampler_expr = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
                     let coordinate = self.parse_general_expression(lexer, ctx.reborrow())?;
                     let sc = ctx.prepare_sampling(image, image_span)?;
@@ -1771,7 +1771,7 @@ impl Parser {
                     lexer.close_arguments()?;
                     crate::Expression::ImageSample {
                         image: sc.image,
-                        sampler: ctx.lookup_ident.lookup(sampler_name, sampler_span)?.handle,
+                        sampler: sampler_expr,
                         gather: None,
                         coordinate,
                         array_index,
@@ -1786,7 +1786,7 @@ impl Parser {
                     let (image, image_span) =
                         self.parse_general_expression_with_span(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
-                    let (sampler_name, sampler_span) = lexer.next_ident_with_span()?;
+                    let sampler_expr = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
                     let coordinate = self.parse_general_expression(lexer, ctx.reborrow())?;
                     let sc = ctx.prepare_sampling(image, image_span)?;
@@ -1806,7 +1806,7 @@ impl Parser {
                     lexer.close_arguments()?;
                     crate::Expression::ImageSample {
                         image: sc.image,
-                        sampler: ctx.lookup_ident.lookup(sampler_name, sampler_span)?.handle,
+                        sampler: sampler_expr,
                         gather: None,
                         coordinate,
                         array_index,
@@ -1821,7 +1821,7 @@ impl Parser {
                     let (image, image_span) =
                         self.parse_general_expression_with_span(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
-                    let (sampler_name, sampler_span) = lexer.next_ident_with_span()?;
+                    let sampler_expr = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
                     let coordinate = self.parse_general_expression(lexer, ctx.reborrow())?;
                     let sc = ctx.prepare_sampling(image, image_span)?;
@@ -1841,7 +1841,7 @@ impl Parser {
                     lexer.close_arguments()?;
                     crate::Expression::ImageSample {
                         image: sc.image,
-                        sampler: ctx.lookup_ident.lookup(sampler_name, sampler_span)?.handle,
+                        sampler: sampler_expr,
                         gather: None,
                         coordinate,
                         array_index,
@@ -1873,7 +1873,7 @@ impl Parser {
                     let (image, image_span) =
                         self.parse_general_expression_with_span(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
-                    let (sampler_name, sampler_span) = lexer.next_ident_with_span()?;
+                    let sampler_expr = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
                     let coordinate = self.parse_general_expression(lexer, ctx.reborrow())?;
                     let sc = ctx.prepare_sampling(image, image_span)?;
@@ -1891,7 +1891,7 @@ impl Parser {
                     lexer.close_arguments()?;
                     crate::Expression::ImageSample {
                         image: sc.image,
-                        sampler: ctx.lookup_ident.lookup(sampler_name, sampler_span)?.handle,
+                        sampler: sampler_expr,
                         gather: Some(component),
                         coordinate,
                         array_index,
@@ -1906,7 +1906,7 @@ impl Parser {
                     let (image, image_span) =
                         self.parse_general_expression_with_span(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
-                    let (sampler_name, sampler_span) = lexer.next_ident_with_span()?;
+                    let sampler_expr = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.expect(Token::Separator(','))?;
                     let coordinate = self.parse_general_expression(lexer, ctx.reborrow())?;
                     let sc = ctx.prepare_sampling(image, image_span)?;
@@ -1926,7 +1926,7 @@ impl Parser {
                     lexer.close_arguments()?;
                     crate::Expression::ImageSample {
                         image: sc.image,
-                        sampler: ctx.lookup_ident.lookup(sampler_name, sampler_span)?.handle,
+                        sampler: sampler_expr,
                         gather: Some(crate::SwizzleComponent::X),
                         coordinate,
                         array_index,

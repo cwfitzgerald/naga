@@ -12,6 +12,8 @@ struct FragmentIn {
 @stage(fragment)
 fn main(in: FragmentIn) {
     var a = textureSample(texture_array1[0], samp, vec2<f32>(0.0, 0.0));
-    var b = textureLoad(texture_array1[0], vec2<f32>(0.0, 0.0));
+    var a = textureSample(texture_array1[in.index], samp, vec2<f32>(0.0, 0.0));
+    var b = textureLoad(texture_array1[0], vec2<f32>(0.0, 0.0), 0.0);
+    var b = textureLoad(texture_array1[in.index], vec2<f32>(0.0, 0.0), 0.0);
     return vec4<f32>(0.0, 0.0, 0.0, 1.0);
 }

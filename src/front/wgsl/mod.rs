@@ -1976,8 +1976,7 @@ impl Parser {
                 "textureDimensions" => {
                     let _ = lexer.next();
                     lexer.open_arguments()?;
-                    let (image_name, image_span) = lexer.next_ident_with_span()?;
-                    let image = ctx.lookup_ident.lookup(image_name, image_span)?.handle;
+                    let image = self.parse_general_expression(lexer, ctx.reborrow())?;
                     let level = if lexer.skip(Token::Separator(',')) {
                         let expr = self.parse_general_expression(lexer, ctx.reborrow())?;
                         Some(expr)
@@ -1993,8 +1992,7 @@ impl Parser {
                 "textureNumLevels" => {
                     let _ = lexer.next();
                     lexer.open_arguments()?;
-                    let (image_name, image_span) = lexer.next_ident_with_span()?;
-                    let image = ctx.lookup_ident.lookup(image_name, image_span)?.handle;
+                    let image = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.close_arguments()?;
                     crate::Expression::ImageQuery {
                         image,
@@ -2004,8 +2002,7 @@ impl Parser {
                 "textureNumLayers" => {
                     let _ = lexer.next();
                     lexer.open_arguments()?;
-                    let (image_name, image_span) = lexer.next_ident_with_span()?;
-                    let image = ctx.lookup_ident.lookup(image_name, image_span)?.handle;
+                    let image = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.close_arguments()?;
                     crate::Expression::ImageQuery {
                         image,
@@ -2015,8 +2012,7 @@ impl Parser {
                 "textureNumSamples" => {
                     let _ = lexer.next();
                     lexer.open_arguments()?;
-                    let (image_name, image_span) = lexer.next_ident_with_span()?;
-                    let image = ctx.lookup_ident.lookup(image_name, image_span)?.handle;
+                    let image = self.parse_general_expression(lexer, ctx.reborrow())?;
                     lexer.close_arguments()?;
                     crate::Expression::ImageQuery {
                         image,

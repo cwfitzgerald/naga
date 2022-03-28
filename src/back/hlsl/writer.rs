@@ -1544,9 +1544,27 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                 {
                     // do nothing, the chain is written on `Load`/`Store`
                 } else {
+                    let base_ty_res = &func_ctx.info[base].ty;
+                    let resolved = base_ty_res.inner_with(&module.types);
+
+                    let non_uniform_qualifier = match *resolved {
+                        TypeInner::BindingArray { .. } => {
+                            let uniformity = &func_ctx.info[index].uniformity;
+
+                            uniformity.non_uniform_result.is_some()
+                        }
+                        _ => false,
+                    };
+
                     self.write_expr(module, base, func_ctx)?;
                     write!(self.out, "[")?;
+                    if non_uniform_qualifier {
+                        write!(self.out, "NonUniformResourceIndex(")?;
+                    }
                     self.write_expr(module, index, func_ctx)?;
+                    if non_uniform_qualifier {
+                        write!(self.out, ")")?;
+                    }
                     write!(self.out, "]")?;
                 }
             }
@@ -1577,6 +1595,7 @@ impl<'a, W: fmt::Write> super::Writer<'a, W> {
                         }
                         TypeInner::Matrix { .. }
                         | TypeInner::Array { .. }
+                        | TypeInner::BindingArray { .. }
                         | TypeInner::ValuePointer { .. } => write!(self.out, "[{}]", index)?,
                         TypeInner::Struct { .. } => {
                             // This will never panic in case the type is a `Struct`, this is not true

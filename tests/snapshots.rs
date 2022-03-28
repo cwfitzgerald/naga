@@ -500,7 +500,8 @@ fn convert_wgsl() {
         ("cubeArrayShadow", Targets::GLSL),
         (
             "binding-arrays",
-            Targets::WGSL | Targets::HLSL | Targets::METAL | Targets::SPIRV,
+            // Targets::WGSL | Targets::HLSL | Targets::METAL | Targets::SPIRV,
+            Targets::WGSL | Targets::HLSL | Targets::METAL,
         ),
     ];
 

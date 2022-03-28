@@ -1194,6 +1194,7 @@ impl<W: Write> Writer<W> {
                     }
                     TypeInner::Matrix { .. }
                     | TypeInner::Array { .. }
+                    | TypeInner::BindingArray { .. }
                     | TypeInner::ValuePointer { .. } => write!(self.out, "[{}]", index)?,
                     TypeInner::Struct { .. } => {
                         // This will never panic in case the type is a `Struct`, this is not true

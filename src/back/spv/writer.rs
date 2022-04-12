@@ -497,7 +497,14 @@ impl Writer {
             let mut gv = self.global_variables[handle.index()].clone();
 
             // Handle globals are pre-emitted and should be loaded automatically.
-            if var.space == crate::AddressSpace::Handle {
+            //
+            // Any that are binding arrays we skip as we cannot load the array, we must load the result after indexing.
+            let is_binding_array = match ir_module.types[var.ty].inner {
+                crate::TypeInner::BindingArray { .. } => true,
+                _ => false,
+            };
+
+            if var.space == crate::AddressSpace::Handle && !is_binding_array {
                 let var_type_id = self.get_type_id(LookupType::Handle(var.ty));
                 let id = self.id_gen.next();
                 prelude

@@ -243,6 +243,15 @@ impl<'w> BlockContext<'w> {
                             None,
                         ));
 
+                        if self.fun_info[index].uniformity.non_uniform_result.is_some() {
+                            self.writer.require_any(
+                                "NonUniformEXT",
+                                &[spirv::Capability::ShaderNonUniform],
+                            )?;
+                            self.writer.use_extension("SPV_EXT_descriptor_indexing");
+                            self.writer
+                                .decorate(load_id, spirv::Decoration::NonUniform, &[]);
+                        }
                         load_id
                     }
                     ref other => {

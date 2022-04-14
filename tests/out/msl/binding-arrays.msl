@@ -21,8 +21,22 @@ fragment main_Output main_(
   main_Input varyings [[stage_in]]
 , metal::array<metal::texture2d<float, metal::access::sample>, 10> texture_array1_ [[texture(0)]]
 , metal::sampler samp [[user(fake0)]]
+, constant UniformIndex& uni [[user(fake0)]]
 ) {
     const FragmentIn in = { varyings.index };
+    uint uniform_index = uni.index;
+    uint non_uniform_index = in.index;
     metal::float4 a1_ = texture_array1_[0].sample(samp, metal::float2(0.0, 0.0));
-    return main_Output { metal::float4(0.0) };
+    metal::float4 a2_ = texture_array1_[uniform_index].sample(samp, metal::float2(0.0, 0.0));
+    metal::float4 a3_ = texture_array1_[non_uniform_index].sample(samp, metal::float2(0.0, 0.0));
+    metal::float4 a = (a1_ + a2_) + a3_;
+    metal::float4 b1_ = texture_array1_[0].read(metal::uint2(metal::int2(0, 0)), 0);
+    metal::float4 b2_ = texture_array1_[uniform_index].read(metal::uint2(metal::int2(0, 0)), 0);
+    metal::float4 b3_ = texture_array1_[non_uniform_index].read(metal::uint2(metal::int2(0, 0)), 0);
+    metal::float4 b = (b1_ + b2_) + b3_;
+    metal::float2 c1_ = static_cast<metal::float2>(metal::int2(texture_array1_[0].get_width(), texture_array1_[0].get_height()));
+    metal::float2 c2_ = static_cast<metal::float2>(metal::int2(texture_array1_[uniform_index].get_width(), texture_array1_[uniform_index].get_height()));
+    metal::float2 c3_ = static_cast<metal::float2>(metal::int2(texture_array1_[non_uniform_index].get_width(), texture_array1_[non_uniform_index].get_height()));
+    metal::float2 c = (c1_ + c2_) + c3_;
+    return main_Output { (a + b) + metal::float4(c.x, c.y, c.x, c.y) };
 }

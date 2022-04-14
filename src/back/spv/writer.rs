@@ -59,6 +59,7 @@ impl Writer {
             id_gen,
             capabilities_available: options.capabilities.clone(),
             capabilities_used,
+            extensions_used: crate::FastHashSet::default(),
             debugs: vec![],
             annotations: vec![],
             flags: options.flags,
@@ -108,6 +109,7 @@ impl Writer {
 
             // Recycled:
             capabilities_used: take(&mut self.capabilities_used).recycle(),
+            extensions_used: take(&mut self.extensions_used).recycle(),
             physical_layout: self.physical_layout.clone().recycle(),
             logical_layout: take(&mut self.logical_layout).recycle(),
             debugs: take(&mut self.debugs).recycle(),
@@ -166,6 +168,11 @@ impl Writer {
                 Ok(())
             }
         }
+    }
+
+    /// Indicate that the code uses the given extension.
+    pub(super) fn use_extension(&mut self, extension: &'static str) {
+        self.extensions_used.insert(extension);
     }
 
     pub(super) fn get_type_id(&mut self, lookup_ty: LookupType) -> Word {
@@ -267,7 +274,7 @@ impl Writer {
         self.get_type_id(local_type.into())
     }
 
-    fn decorate(&mut self, id: Word, decoration: spirv::Decoration, operands: &[Word]) {
+    pub(super) fn decorate(&mut self, id: Word, decoration: spirv::Decoration, operands: &[Word]) {
         self.annotations
             .push(Instruction::decorate(id, decoration, operands));
     }
@@ -1493,6 +1500,9 @@ impl Writer {
 
         for capability in self.capabilities_used.iter() {
             Instruction::capability(*capability).to_words(&mut self.logical_layout.capabilities);
+        }
+        for extension in self.extensions_used.iter() {
+            Instruction::extension(extension).to_words(&mut self.logical_layout.extensions);
         }
         if ir_module.entry_points.is_empty() {
             // SPIR-V doesn't like modules without entry points

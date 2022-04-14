@@ -567,6 +567,9 @@ pub struct Writer {
     /// that.
     capabilities_used: crate::FastHashSet<Capability>,
 
+    /// The set of spirv extensions used.
+    extensions_used: crate::FastHashSet<&'static str>,
+
     debugs: Vec<Instruction>,
     annotations: Vec<Instruction>,
     flags: WriterFlags,

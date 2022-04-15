@@ -22,7 +22,7 @@ fn main(in: FragmentIn) -> @location(0) vec4<f32> {
 
     let a1 = textureSample(texture_array1[0], samp, vec2<f32>(0.0, 0.0));
     let a2 = textureSample(texture_array1[uniform_index], samp, vec2<f32>(0.0, 0.0));
-    let a3 = textureSample(texture_array1[non_uniform_index], samp, vec2<f32>(0.0, 0.0));
+    let a3 = textureSample(texture_array1[non_uniform_index], samp, vec2<f32>(0.0, 0.0)); 
     let a = a1 + a2 + a3;
 
     let b1 = textureLoad(texture_array1[0], vec2<i32>(0, 0), 0);

@@ -45,7 +45,7 @@ struct SpirvOutParameters {
     separate_entry_points: bool,
     #[serde(default)]
     #[cfg(all(feature = "deserialize", feature = "spv-out"))]
-    binding_info: naga::back::spv::BindingMap,
+    binding_map: naga::back::spv::BindingMap,
 }
 
 #[derive(Default, serde::Deserialize)]
@@ -210,6 +210,7 @@ fn write_output_spv(
             Some(params.capabilities.clone())
         },
         bounds_check_policies,
+        binding_map: params.binding_map.clone(),
         ..spv::Options::default()
     };
 

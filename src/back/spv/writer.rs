@@ -7,6 +7,7 @@ use super::{
 };
 use crate::{
     arena::{Handle, UniqueArena},
+    back::spv::BindingInfo,
     proc::TypeResolution,
     valid::{FunctionInfo, ModuleInfo},
 };
@@ -71,6 +72,7 @@ impl Writer {
             constant_ids: Vec::new(),
             cached_constants: crate::FastHashMap::default(),
             global_variables: Vec::new(),
+            binding_map: options.binding_map.clone(),
             saved_cached: CachedExpressions::default(),
             gl450_ext_inst_id,
             temp_list: Vec::new(),
@@ -101,6 +103,7 @@ impl Writer {
             flags: self.flags,
             bounds_check_policies: self.bounds_check_policies,
             capabilities_available: take(&mut self.capabilities_available),
+            binding_map: take(&mut self.binding_map),
 
             // Initialized afresh:
             id_gen,
@@ -802,6 +805,16 @@ impl Writer {
             LocalType::SampledImage { image_type_id } => {
                 Instruction::type_sampled_image(id, image_type_id)
             }
+            LocalType::BindingArray { base, size } => {
+                let inner_ty = self.get_type_id(LookupType::Handle(base));
+                let scalar_id = self.get_constant_scalar(crate::ScalarValue::Uint(size), 4);
+                Instruction::type_array(id, inner_ty, scalar_id)
+            }
+            LocalType::PointerToBindingArray { base, size } => {
+                let inner_ty =
+                    self.get_type_id(LookupType::Local(LocalType::BindingArray { base, size }));
+                Instruction::type_pointer(id, spirv::StorageClass::UniformConstant, inner_ty)
+            }
         };
 
         instruction.to_words(&mut self.logical_layout.declarations);
@@ -858,7 +871,6 @@ impl Writer {
                 }
                 crate::TypeInner::BindingArray { base, size } => {
                     let type_id = self.get_type_id(LookupType::Handle(base));
-                    // TODO: We have no idea what binding this could be, so we can't attach a size to it.
                     match size {
                         crate::ArraySize::Constant(const_handle) => {
                             let length_id = self.constant_ids[const_handle.index()];
@@ -1293,15 +1305,35 @@ impl Writer {
             }
         }
 
+        let mut substitute_inner_type_lookup = None;
         if let Some(ref res_binding) = global_variable.binding {
             self.decorate(id, Decoration::DescriptorSet, &[res_binding.group]);
             self.decorate(id, Decoration::Binding, &[res_binding.binding]);
-        }
+
+            if let Some(&BindingInfo {
+                binding_array_size: Some(remapped_binding_array_size),
+            }) = self.binding_map.get(res_binding)
+            {
+                match ir_module.types[global_variable.ty].inner {
+                    crate::TypeInner::BindingArray { base, .. } => {
+                        substitute_inner_type_lookup =
+                            Some(LookupType::Local(LocalType::PointerToBindingArray {
+                                base,
+                                size: remapped_binding_array_size as u64,
+                            }))
+                    }
+                    _ => {}
+                }
+            } else {
+            }
+        };
 
         let init_word = global_variable
             .init
             .map(|constant| self.constant_ids[constant.index()]);
-        let inner_type_id = self.get_type_id(LookupType::Handle(global_variable.ty));
+        let inner_type_id = self.get_type_id(
+            substitute_inner_type_lookup.unwrap_or(LookupType::Handle(global_variable.ty)),
+        );
 
         // generate the wrapping structure if needed
         let pointer_type_id = if global_needs_wrapper(ir_module, global_variable) {
@@ -1330,7 +1362,11 @@ impl Writer {
             if let crate::AddressSpace::Storage { .. } = global_variable.space {
                 self.decorate(inner_type_id, Decoration::Block, &[]);
             }
-            self.get_pointer_id(&ir_module.types, global_variable.ty, class)?
+            if substitute_inner_type_lookup.is_some() {
+                inner_type_id
+            } else {
+                self.get_pointer_id(&ir_module.types, global_variable.ty, class)?
+            }
         };
 
         Instruction::variable(pointer_type_id, id, class, init_word)

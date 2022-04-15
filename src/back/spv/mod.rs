@@ -287,6 +287,14 @@ enum LocalType {
         image_type_id: Word,
     },
     Sampler,
+    PointerToBindingArray {
+        base: Handle<crate::Type>,
+        size: u64
+    },
+    BindingArray {
+        base: Handle<crate::Type>,
+        size: u64
+    }
 }
 
 /// A type encountered during SPIR-V generation.
@@ -582,6 +590,7 @@ pub struct Writer {
     constant_ids: Vec<Word>,
     cached_constants: crate::FastHashMap<(crate::ScalarValue, crate::Bytes), Word>,
     global_variables: Vec<GlobalVariable>,
+    binding_map: BindingMap,
 
     // Cached expressions are only meaningful within a BlockContext, but we
     // retain the table here between functions to save heap allocations.

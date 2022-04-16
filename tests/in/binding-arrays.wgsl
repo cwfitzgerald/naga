@@ -1,5 +1,5 @@
 struct UniformIndex {
-    index: u32;
+    index: u32
 };
 
 @group(0) @binding(0)
@@ -22,10 +22,10 @@ var samp_comp: binding_array<sampler_comparison, 5>;
 var<uniform> uni: UniformIndex;
 
 struct FragmentIn {
-    @location(0) index: u32;
+    @location(0) index: u32,
 };
 
-@stage(fragment)
+@fragment
 fn main(in: FragmentIn) -> @location(0) vec4<f32> {
     let uniform_index = uni.index;
     let non_uniform_index = in.index;

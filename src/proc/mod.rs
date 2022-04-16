@@ -135,7 +135,7 @@ impl super::TypeInner {
         self.try_size(constants).unwrap()
     }
 
-    /// Return the canoncal form of `self`, or `None` if it's already in
+    /// Return the canonical form of `self`, or `None` if it's already in
     /// canonical form.
     ///
     /// Certain types have multiple representations in `TypeInner`. This
@@ -184,6 +184,18 @@ impl super::TypeInner {
         let left = self.canonical_form(types);
         let right = rhs.canonical_form(types);
         left.as_ref().unwrap_or(self) == right.as_ref().unwrap_or(rhs)
+    }
+
+    pub fn is_dynamically_sized(&self, types: &crate::UniqueArena<crate::Type>) -> bool {
+        use crate::TypeInner as Ti;
+        match *self {
+            Ti::Array { size, .. } => size == crate::ArraySize::Dynamic,
+            Ti::Struct { ref members, .. } => members
+                .last()
+                .map(|last| types[last.ty].inner.is_dynamically_sized(types))
+                .unwrap_or(false),
+            _ => false,
+        }
     }
 }
 
@@ -390,7 +402,7 @@ impl crate::Constant {
 impl crate::Binding {
     pub fn to_built_in(&self) -> Option<crate::BuiltIn> {
         match *self {
-            Self::BuiltIn(bi) => Some(bi),
+            crate::Binding::BuiltIn(built_in) => Some(built_in),
             Self::Location { .. } => None,
         }
     }

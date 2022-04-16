@@ -132,7 +132,7 @@ fn bad_texture() {
         r#"
             @group(0) @binding(0) var sampler1 : sampler;
 
-            @stage(fragment)
+            @fragment
             fn main() -> @location(0) vec4<f32> {
                 let a = 3;
                 return textureSample(a, sampler1, vec2<f32>(0.0));
@@ -157,10 +157,82 @@ fn bad_type_cast() {
             }
         "#,
         r#"error: cannot cast a vec2<f32> to a i32
-  ┌─ wgsl:3:27
+  ┌─ wgsl:3:28
   │
 3 │                 return i32(vec2<f32>(0.0));
-  │                           ^^^^^^^^^^^^^^^^ cannot cast a vec2<f32> to a i32
+  │                            ^^^^^^^^^^^^^^ cannot cast a vec2<f32> to a i32
+
+"#,
+    );
+}
+
+#[test]
+fn type_not_constructible() {
+    check(
+        r#"
+            fn x() {
+                var _ = atomic<i32>(0);
+            }
+        "#,
+        r#"error: type `atomic` is not constructible
+  ┌─ wgsl:3:25
+  │
+3 │                 var _ = atomic<i32>(0);
+  │                         ^^^^^^ type is not constructible
+
+"#,
+    );
+}
+
+#[test]
+fn type_not_inferrable() {
+    check(
+        r#"
+            fn x() {
+                var _ = vec2();
+            }
+        "#,
+        r#"error: type can't be inferred
+  ┌─ wgsl:3:25
+  │
+3 │                 var _ = vec2();
+  │                         ^^^^ type can't be inferred
+
+"#,
+    );
+}
+
+#[test]
+fn unexpected_constructor_parameters() {
+    check(
+        r#"
+            fn x() {
+                var _ = i32(0, 1);
+            }
+        "#,
+        r#"error: unexpected components
+  ┌─ wgsl:3:31
+  │
+3 │                 var _ = i32(0, 1);
+  │                               ^^ unexpected components
+
+"#,
+    );
+}
+
+#[test]
+fn constructor_parameter_type_mismatch() {
+    check(
+        r#"
+            fn x() {
+                var _ = mat2x2<f32>(array(0, 1), vec2(2, 3));
+            }
+        "#,
+        r#"error: invalid type for constructor component at index [0]
+  ┌─ wgsl:3:37
+  │
+3 │                 var _ = mat2x2<f32>(array(0, 1), vec2(2, 3));
+  │                                     ^^^^^^^^^^^ invalid component type
 
 "#,
     );
@@ -173,7 +245,7 @@ fn bad_texture_sample_type() {
             @group(0) @binding(0) var sampler1 : sampler;
             @group(0) @binding(1) var texture : texture_2d<bool>;
 
-            @stage(fragment)
+            @fragment
             fn main() -> @location(0) vec4<f32> {
                 return textureSample(texture, sampler1, vec2<f32>(0.0));
             }
@@ -272,22 +344,6 @@ fn unknown_access() {
 }
 
 #[test]
-fn unknown_shader_stage() {
-    check(
-        r#"
-            @stage(geometry) fn main() {}
-        "#,
-        r#"error: unknown shader stage: 'geometry'
-  ┌─ wgsl:2:20
-  │
-2 │             @stage(geometry) fn main() {}
-  │                    ^^^^^^^^ unknown shader stage
-
-"#,
-    );
-}
-
-#[test]
 fn unknown_ident() {
     check(
         r#"
@@ -376,13 +432,13 @@ fn struct_member_zero_size() {
     check(
         r#"
             struct Bar {
-                @size(0) data: array<f32>;
-            };
+                @size(0) data: array<f32>
+            }
         "#,
         r#"error: struct member size or alignment must not be 0
   ┌─ wgsl:3:23
   │
-3 │                 @size(0) data: array<f32>;
+3 │                 @size(0) data: array<f32>
   │                       ^ struct member size or alignment must not be 0
 
 "#,
@@ -394,13 +450,13 @@ fn struct_member_zero_align() {
     check(
         r#"
             struct Bar {
-                @align(0) data: array<f32>;
-            };
+                @align(0) data: array<f32>
+            }
         "#,
         r#"error: struct member size or alignment must not be 0
   ┌─ wgsl:3:24
   │
-3 │                 @align(0) data: array<f32>;
+3 │                 @align(0) data: array<f32>
   │                        ^ struct member size or alignment must not be 0
 
 "#,
@@ -542,7 +598,7 @@ fn postfix_pointers() {
 
     check(
         r#"
-            struct S { m: i32; };
+            struct S { m: i32 };
             fn main() {
                 var s: S = S(42);
                 let ps = &s;
@@ -641,12 +697,12 @@ fn reserved_keyword() {
     // struct
     check(
         r#"
-            struct array {};
+            struct array {}
         "#,
         r###"error: name `array` is a reserved keyword
   ┌─ wgsl:2:20
   │
-2 │             struct array {};
+2 │             struct array {}
   │                    ^^^^^ definition of `array`
 
 "###,
@@ -655,12 +711,12 @@ fn reserved_keyword() {
     // struct member
     check(
         r#"
-            struct Foo { sampler: f32; };
+            struct Foo { sampler: f32 }
         "#,
         r###"error: name `sampler` is a reserved keyword
   ┌─ wgsl:2:26
   │
-2 │             struct Foo { sampler: f32; };
+2 │             struct Foo { sampler: f32 }
   │                          ^^^^^^^ definition of `sampler`
 
 "###,
@@ -843,8 +899,8 @@ fn invalid_arrays() {
 #[test]
 fn invalid_structs() {
     check_validation_error! {
-        "struct Bad { data: sampler; };",
-        "struct Bad { data: texture_2d<f32>; };":
+        "struct Bad { data: sampler }",
+        "struct Bad { data: texture_2d<f32> }":
         Err(naga::valid::ValidationError::Type {
             error: naga::valid::TypeError::InvalidData(_),
             ..
@@ -852,9 +908,17 @@ fn invalid_structs() {
     }
 
     check_validation_error! {
-        "struct Bad { data: array<f32>; other: f32; };":
+        "struct Bad { data: array<f32>, other: f32, }":
         Err(naga::valid::ValidationError::Type {
             error: naga::valid::TypeError::InvalidDynamicArray(_, _),
+            ..
+        })
+    }
+
+    check_validation_error! {
+        "struct Empty {}":
+        Err(naga::valid::ValidationError::Type {
+            error: naga::valid::TypeError::EmptyStruct,
             ..
         })
     }
@@ -865,7 +929,7 @@ fn invalid_functions() {
     check_validation_error! {
         "fn unacceptable_unsized(arg: array<f32>) { }",
         "
-        struct Unsized { data: array<f32>; };
+        struct Unsized { data: array<f32> }
         fn unacceptable_unsized(arg: Unsized) { }
         ":
         Err(naga::valid::ValidationError::Function {
@@ -883,7 +947,7 @@ fn invalid_functions() {
     check_validation_error! {
         "fn unacceptable_unsized(arg: ptr<workgroup, array<f32>>) { }",
         "
-        struct Unsized { data: array<f32>; };
+        struct Unsized { data: array<f32> }
         fn unacceptable_unsized(arg: ptr<workgroup, Unsized>) { }
         ":
         Err(naga::valid::ValidationError::Type {
@@ -947,7 +1011,7 @@ fn pointer_type_equivalence() {
 fn missing_bindings() {
     check_validation_error! {
         "
-        @stage(vertex)
+        @vertex
         fn vertex(input: vec4<f32>) -> @location(0) vec4<f32> {
            return input;
         }
@@ -964,7 +1028,7 @@ fn missing_bindings() {
 
     check_validation_error! {
         "
-        @stage(vertex)
+        @vertex
         fn vertex(@location(0) input: vec4<f32>, more_input: f32) -> @location(0) vec4<f32> {
            return input + more_input;
         }
@@ -981,7 +1045,7 @@ fn missing_bindings() {
 
     check_validation_error! {
         "
-        @stage(vertex)
+        @vertex
         fn vertex(@location(0) input: vec4<f32>) -> vec4<f32> {
            return input;
         }
@@ -998,11 +1062,11 @@ fn missing_bindings() {
     check_validation_error! {
         "
         struct VertexIn {
-          @location(0) pos: vec4<f32>;
-          uv: vec2<f32>;
-        };
+          @location(0) pos: vec4<f32>,
+          uv: vec2<f32>
+        }
 
-        @stage(vertex)
+        @vertex
         fn vertex(input: VertexIn) -> @location(0) vec4<f32> {
            return input.pos;
         }
@@ -1088,7 +1152,7 @@ fn valid_access() {
 fn invalid_local_vars() {
     check_validation_error! {
         "
-        struct Unsized { data: array<f32>; };
+        struct Unsized { data: array<f32> }
         fn local_ptr_dynamic_array(okay: ptr<storage, Unsized>) {
             var not_okay: ptr<storage, array<f32>> = &(*okay).data;
         }
@@ -1144,13 +1208,13 @@ fn invalid_runtime_sized_arrays() {
     check_validation_error! {
         "
         struct Unsized {
-            arr: array<f32>;
-        };
+            arr: array<f32>
+        }
 
         struct Outer {
-            legit: i32;
-            unsized: Unsized;
-        };
+            legit: i32,
+            unsized: Unsized
+        }
 
         @group(0) @binding(0) var<storage> outer: Outer;
 
@@ -1187,7 +1251,7 @@ fn select() {
         }
         ",
         "
-        struct S { member: i32; };
+        struct S { member: i32 }
         fn select_structs(which: bool) -> S {
             var x: S = S(1);
             var y: S = S(2);
@@ -1257,8 +1321,8 @@ fn wrong_access_mode() {
     check_validation_error! {
         "
             struct Globals {
-                i: i32;
-            };
+                i: i32
+            }
 
             @group(0) @binding(0)
             var<storage> globals: Globals;
@@ -1269,8 +1333,8 @@ fn wrong_access_mode() {
         ",
         "
             struct Globals {
-                i: i32;
-            };
+                i: i32
+            }
 
             @group(0) @binding(0)
             var<uniform> globals: Globals;

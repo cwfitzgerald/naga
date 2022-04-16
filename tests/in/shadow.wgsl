@@ -1,35 +1,35 @@
 struct Globals {
-    view_proj: mat4x4<f32>;
-    num_lights: vec4<u32>;
-};
+    view_proj: mat4x4<f32>,
+    num_lights: vec4<u32>,
+}
 
 @group(0)
 @binding(0)
 var<uniform> u_globals: Globals;
 
 struct Entity {
-    world: mat4x4<f32>;
-    color: vec4<f32>;
-};
+    world: mat4x4<f32>,
+    color: vec4<f32>,
+}
 
 @group(1)
 @binding(0)
 var<uniform> u_entity: Entity;
 
 /* Not useful for testing
-@stage(vertex)
+@vertex
 fn vs_bake(@location(0) position: vec4<i32>) -> @builtin(position) vec4<f32> {
     return u_globals.view_proj * u_entity.world * vec4<f32>(position);
 }
 */
 
 struct VertexOutput {
-    @builtin(position) proj_position: vec4<f32>;
-    @location(0) world_normal: vec3<f32>;
-    @location(1) world_position: vec4<f32>;
-};
+    @builtin(position) proj_position: vec4<f32>,
+    @location(0) world_normal: vec3<f32>,
+    @location(1) world_position: vec4<f32>,
+}
 
-@stage(vertex)
+@vertex
 fn vs_main(
     @location(0) position: vec4<i32>,
     @location(1) normal: vec4<i32>,
@@ -46,10 +46,10 @@ fn vs_main(
 // fragment shader
 
 struct Light {
-    proj: mat4x4<f32>;
-    pos: vec4<f32>;
-    color: vec4<f32>;
-};
+    proj: mat4x4<f32>,
+    pos: vec4<f32>,
+    color: vec4<f32>,
+}
 
 @group(0)
 @binding(1)
@@ -80,12 +80,12 @@ fn fetch_shadow(light_id: u32, homogeneous_coords: vec4<f32>) -> f32 {
 let c_ambient: vec3<f32> = vec3<f32>(0.05, 0.05, 0.05);
 let c_max_lights: u32 = 10u;
 
-@stage(fragment)
+@fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     let normal = normalize(in.world_normal);
     // accumulate color
     var color: vec3<f32> = c_ambient;
-    for(var i = 0u; i < min(u_globals.num_lights.x, c_max_lights); i += 1u) {
+    for(var i = 0u; i < min(u_globals.num_lights.x, c_max_lights); i++) {
         let light = s_lights[i];
         // project into the light space
         let shadow = fetch_shadow(i, light.proj * in.world_position);
@@ -100,11 +100,11 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 }
 
 // The fragment entrypoint used when storage buffers are not available for the lights
-@stage(fragment)
+@fragment
 fn fs_main_without_storage(in: VertexOutput) -> @location(0) vec4<f32> {
     let normal = normalize(in.world_normal);
     var color: vec3<f32> = c_ambient;
-    for(var i = 0u; i < min(u_globals.num_lights.x, c_max_lights); i += 1u) {
+    for(var i = 0u; i < min(u_globals.num_lights.x, c_max_lights); i++) {
         // This line is the only difference from the entrypoint above. It uses the lights
         // uniform instead of the lights storage buffer
         let light = u_lights[i];

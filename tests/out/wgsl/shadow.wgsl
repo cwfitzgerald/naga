@@ -1,24 +1,24 @@
 struct Globals {
-    view_proj: mat4x4<f32>;
-    num_lights: vec4<u32>;
-};
+    view_proj: mat4x4<f32>,
+    num_lights: vec4<u32>,
+}
 
 struct Entity {
-    world: mat4x4<f32>;
-    color: vec4<f32>;
-};
+    world: mat4x4<f32>,
+    color: vec4<f32>,
+}
 
 struct VertexOutput {
-    @builtin(position) proj_position: vec4<f32>;
-    @location(0) world_normal: vec3<f32>;
-    @location(1) world_position: vec4<f32>;
-};
+    @builtin(position) proj_position: vec4<f32>,
+    @location(0) world_normal: vec3<f32>,
+    @location(1) world_position: vec4<f32>,
+}
 
 struct Light {
-    proj: mat4x4<f32>;
-    pos: vec4<f32>;
-    color: vec4<f32>;
-};
+    proj: mat4x4<f32>,
+    pos: vec4<f32>,
+    color: vec4<f32>,
+}
 
 let c_ambient: vec3<f32> = vec3<f32>(0.05000000074505806, 0.05000000074505806, 0.05000000074505806);
 let c_max_lights: u32 = 10u;
@@ -47,7 +47,7 @@ fn fetch_shadow(light_id: u32, homogeneous_coords: vec4<f32>) -> f32 {
     return _e28;
 }
 
-@stage(vertex) 
+@vertex 
 fn vs_main(@location(0) position: vec4<i32>, @location(1) normal: vec4<i32>) -> VertexOutput {
     var out: VertexOutput;
 
@@ -62,7 +62,7 @@ fn vs_main(@location(0) position: vec4<i32>, @location(1) normal: vec4<i32>) -> 
     return _e27;
 }
 
-@stage(fragment) 
+@fragment 
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     var color: vec3<f32> = vec3<f32>(0.05000000074505806, 0.05000000074505806, 0.05000000074505806);
     var i: u32 = 0u;
@@ -93,7 +93,7 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     return (vec4<f32>(_e46, 1.0) * _e50);
 }
 
-@stage(fragment) 
+@fragment 
 fn fs_main_without_storage(in_1: VertexOutput) -> @location(0) vec4<f32> {
     var color_1: vec3<f32> = vec3<f32>(0.05000000074505806, 0.05000000074505806, 0.05000000074505806);
     var i_1: u32 = 0u;

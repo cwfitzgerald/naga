@@ -1,10 +1,10 @@
 struct BST {
-    data: i32;
-};
+    data: i32,
+}
 
 struct FragmentOutput {
-    @location(0) o_color: vec4<f32>;
-};
+    @location(0) o_color: vec4<f32>,
+}
 
 var<private> global: f32;
 var<private> o_color: vec4<f32>;
@@ -286,7 +286,16 @@ fn testFreestandingConstructor() {
     return;
 }
 
-fn privatePointer(a_18: ptr<function, f32>) {
+fn testNonImplicitCastVectorCast() {
+    var a_18: u32 = 1u;
+    var b_16: vec4<i32>;
+
+    let _e3 = a_18;
+    b_16 = vec4<i32>(i32(_e3));
+    return;
+}
+
+fn privatePointer(a_19: ptr<function, f32>) {
     return;
 }
 
@@ -307,7 +316,7 @@ fn main_1() {
     return;
 }
 
-@stage(fragment) 
+@fragment 
 fn main() -> FragmentOutput {
     main_1();
     let _e5 = o_color;

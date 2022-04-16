@@ -1,16 +1,16 @@
 struct VertexOutput {
-    @builtin(position) position: vec4<f32>;
-    @location(0) uv: vec3<f32>;
-};
+    @builtin(position) position: vec4<f32>,
+    @location(0) uv: vec3<f32>,
+}
 
 struct Data {
-    proj_inv: mat4x4<f32>;
-    view: mat4x4<f32>;
-};
+    proj_inv: mat4x4<f32>,
+    view: mat4x4<f32>,
+}
 @group(0) @binding(0)
 var<uniform> r_data: Data;
 
-@stage(vertex)
+@vertex
 fn vs_main(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
     // hacky way to draw a large triangle
     var tmp1 = i32(vertex_index) / 2;
@@ -32,7 +32,7 @@ var r_texture: texture_cube<f32>;
 @group(0) @binding(2)
 var r_sampler: sampler;
 
-@stage(fragment)
+@fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
     return textureSample(r_texture, r_sampler, in.uv);
 }

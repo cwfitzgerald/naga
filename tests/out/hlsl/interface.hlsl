@@ -6,14 +6,14 @@ struct NagaConstants {
 ConstantBuffer<NagaConstants> _NagaConstants: register(b0, space1);
 
 struct VertexOutput {
-    float4 position : SV_Position;
-    linear float varying : LOC1;
+    precise float4 position : SV_Position;
+    float varying : LOC1;
 };
 
 struct FragmentOutput {
     float depth : SV_Depth;
     uint sample_mask : SV_Coverage;
-    linear float color : SV_Target0;
+    float color : SV_Target0;
 };
 
 struct Input1_ {
@@ -28,12 +28,12 @@ groupshared uint output[1];
 
 struct VertexOutput_vertex {
     float varying : LOC1;
-    float4 position : SV_Position;
+    precise float4 position : SV_Position;
 };
 
 struct FragmentInput_fragment {
     float varying_1 : LOC1;
-    float4 position_1 : SV_Position;
+    precise float4 position_1 : SV_Position;
     bool front_facing_1 : SV_IsFrontFace;
     uint sample_index_1 : SV_SampleIndex;
     uint sample_mask_1 : SV_Coverage;
@@ -49,7 +49,7 @@ VertexOutput ConstructVertexOutput(float4 arg0, float arg1) {
 VertexOutput_vertex vertex(uint vertex_index : SV_VertexID, uint instance_index : SV_InstanceID, uint color : LOC10)
 {
     uint tmp = (((_NagaConstants.base_vertex + vertex_index) + (_NagaConstants.base_instance + instance_index)) + color);
-    const VertexOutput vertexoutput = ConstructVertexOutput(float4(1.0.xxxx), float(tmp));
+    const VertexOutput vertexoutput = ConstructVertexOutput((1.0).xxxx, float(tmp));
     const VertexOutput_vertex vertexoutput_1 = { vertexoutput.varying, vertexoutput.position };
     return vertexoutput_1;
 }
@@ -81,7 +81,7 @@ void compute(uint3 global_id : SV_DispatchThreadID, uint3 local_id : SV_GroupThr
     return;
 }
 
-float4 vertex_two_structs(Input1_ in1_, Input2_ in2_) : SV_Position
+precise float4 vertex_two_structs(Input1_ in1_, Input2_ in2_) : SV_Position
 {
     uint index = 2u;
 

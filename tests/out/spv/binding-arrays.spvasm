@@ -1,7 +1,7 @@
 ; SPIR-V
 ; Version: 1.1
 ; Generator: rspirv
-; Bound: 372
+; Bound: 382
 OpCapability Shader
 OpCapability ImageQuery
 OpCapability ShaderNonUniform
@@ -23,13 +23,13 @@ OpDecorate %35 Binding 3
 OpDecorate %37 DescriptorSet 0
 OpDecorate %37 Binding 4
 OpDecorate %39 DescriptorSet 0
-OpDecorate %39 Binding 4
+OpDecorate %39 Binding 5
 OpDecorate %41 DescriptorSet 0
-OpDecorate %41 Binding 5
+OpDecorate %41 Binding 6
 OpDecorate %43 DescriptorSet 0
-OpDecorate %43 Binding 6
+OpDecorate %43 Binding 7
 OpDecorate %45 DescriptorSet 0
-OpDecorate %45 Binding 7
+OpDecorate %45 Binding 8
 OpDecorate %46 Block
 OpMemberDecorate %46 0 Offset 0
 OpDecorate %58 Location 0
@@ -56,6 +56,7 @@ OpDecorate %327 NonUniform
 OpDecorate %329 NonUniform
 OpDecorate %351 NonUniform
 OpDecorate %353 NonUniform
+OpDecorate %365 NonUniform
 %2 = OpTypeVoid
 %4 = OpTypeInt 32 1
 %3 = OpConstant  %4  5
@@ -124,6 +125,7 @@ OpDecorate %353 NonUniform
 %163 = OpTypePointer UniformConstant %13
 %166 = OpTypeVector %4 3
 %198 = OpTypePointer UniformConstant %15
+%357 = OpTypePointer UniformConstant %19
 %63 = OpFunction  %2  None %64
 %56 = OpLabel
 %50 = OpVariable  %51  Function
@@ -453,21 +455,33 @@ OpStore %54 %348
 %355 = OpImageSampleExplicitLod  %25  %354 %76 Lod %6
 %356 = OpFAdd  %25  %349 %355
 OpStore %54 %356
-%357 = OpLoad  %26  %50
-%358 = OpLoad  %4  %48
-%359 = OpCompositeConstruct  %26  %358 %358
-%360 = OpIAdd  %26  %357 %359
-%361 = OpConvertSToF  %75  %360
-%362 = OpLoad  %25  %54
-%363 = OpCompositeExtract  %7  %361 0
-%364 = OpCompositeExtract  %7  %361 1
-%365 = OpCompositeExtract  %7  %361 0
-%366 = OpCompositeExtract  %7  %361 1
-%367 = OpCompositeConstruct  %25  %363 %364 %365 %366
-%368 = OpFAdd  %25  %362 %367
-%369 = OpLoad  %7  %52
-%370 = OpCompositeConstruct  %25  %369 %369 %369 %369
-%371 = OpFAdd  %25  %368 %370
-OpStore %61 %371
+%358 = OpAccessChain  %357  %39 %66
+%359 = OpLoad  %19  %358
+%360 = OpLoad  %25  %54
+OpImageWrite %359 %77 %360
+%361 = OpAccessChain  %357  %39 %71
+%362 = OpLoad  %19  %361
+%363 = OpLoad  %25  %54
+OpImageWrite %362 %77 %363
+%364 = OpAccessChain  %357  %39 %72
+%365 = OpLoad  %19  %364
+%366 = OpLoad  %25  %54
+OpImageWrite %365 %77 %366
+%367 = OpLoad  %26  %50
+%368 = OpLoad  %4  %48
+%369 = OpCompositeConstruct  %26  %368 %368
+%370 = OpIAdd  %26  %367 %369
+%371 = OpConvertSToF  %75  %370
+%372 = OpLoad  %25  %54
+%373 = OpCompositeExtract  %7  %371 0
+%374 = OpCompositeExtract  %7  %371 1
+%375 = OpCompositeExtract  %7  %371 0
+%376 = OpCompositeExtract  %7  %371 1
+%377 = OpCompositeConstruct  %25  %373 %374 %375 %376
+%378 = OpFAdd  %25  %372 %377
+%379 = OpLoad  %7  %52
+%380 = OpCompositeConstruct  %25  %379 %379 %379 %379
+%381 = OpFAdd  %25  %378 %380
+OpStore %61 %381
 OpReturn
 OpFunctionEnd

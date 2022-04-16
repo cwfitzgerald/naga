@@ -203,6 +203,7 @@ struct Decoration {
     array_stride: Option<NonZeroU32>,
     matrix_stride: Option<NonZeroU32>,
     matrix_major: Option<Majority>,
+    invariant: bool,
     interpolation: Option<crate::Interpolation>,
     sampling: Option<crate::Sampling>,
     flags: DecorationFlags,
@@ -232,8 +233,9 @@ impl Decoration {
             Decoration {
                 built_in: Some(built_in),
                 location: None,
+                invariant,
                 ..
-            } => map_builtin(built_in).map(crate::Binding::BuiltIn),
+            } => Ok(crate::Binding::BuiltIn(map_builtin(built_in, invariant)?)),
             Decoration {
                 built_in: None,
                 location: Some(location),
@@ -680,6 +682,9 @@ impl<I: Iterator<Item = u32>> Parser<I> {
             spirv::Decoration::MatrixStride => {
                 inst.expect(base_words + 2)?;
                 dec.matrix_stride = NonZeroU32::new(self.next()?);
+            }
+            spirv::Decoration::Invariant => {
+                dec.invariant = true;
             }
             spirv::Decoration::NoPerspective => {
                 dec.interpolation = Some(crate::Interpolation::Linear);
@@ -1467,10 +1472,10 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                                     span,
                                 );
 
-                                if let Some(crate::Binding::BuiltIn(builtin)) =
+                                if let Some(crate::Binding::BuiltIn(built_in)) =
                                     members[index as usize].binding
                                 {
-                                    self.builtin_usage.insert(builtin);
+                                    self.builtin_usage.insert(built_in);
                                 }
 
                                 AccessExpression {
@@ -2844,7 +2849,7 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                     // we can treat it as an extension of the current `Body`.
                     //
                     // NOTE: it's possible that another branch was already made to this block
-                    // setting the body index in which case it SHOULD NOT be overriden.
+                    // setting the body index in which case it SHOULD NOT be overridden.
                     // For example a switch with falltrough, the OpSwitch will set the body to
                     // the respective case and the case may branch to another case in which case
                     // the body index shouldn't be changed
@@ -3010,7 +3015,7 @@ impl<I: Iterator<Item = u32>> Parser<I> {
                     // others will be empty falltrough so that they all execute the same body
                     // without duplicating code.
                     //
-                    // Since `switch_cases` is an indexmap the order of insertation is preserved
+                    // Since `switch_cases` is an indexmap the order of insertion is preserved
                     // this is needed because spir-v defines falltrough order in the switch
                     // instruction.
                     let mut cases = Vec::with_capacity((inst.wc as usize - 3) / 2);
@@ -4200,19 +4205,15 @@ impl<I: Iterator<Item = u32>> Parser<I> {
             } = *inner
             {
                 if let Some(stride) = decor.matrix_stride {
-                    let rounded_rows = if rows > crate::VectorSize::Bi {
-                        4
-                    } else {
-                        rows as u32
-                    };
-                    if stride.get() != rounded_rows * (width as u32) {
-                        log::warn!(
-                            "Unexpected matrix stride {} for an {}x{} matrix with scalar width={}",
-                            stride.get(),
-                            columns as u8,
-                            rows as u8,
+                    let aligned_rows = if rows > crate::VectorSize::Bi { 4 } else { 2 };
+                    let expected_stride = aligned_rows * width as u32;
+                    if stride.get() != expected_stride {
+                        return Err(Error::UnsupportedMatrixStride {
+                            stride: stride.get(),
+                            columns: columns as u8,
+                            rows: rows as u8,
                             width,
-                        );
+                        });
                     }
                 }
             }

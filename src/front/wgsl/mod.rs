@@ -3893,13 +3893,10 @@ impl Parser {
                         let _ = lexer.next();
                         emitter.start(context.expressions);
                         lexer.open_arguments()?;
-                        let (image_name, image_span) = lexer.next_ident_with_span()?;
-                        let image = context
-                            .lookup_ident
-                            .lookup(image_name, image_span.clone())?
-                            .handle;
-                        lexer.expect(Token::Separator(','))?;
                         let mut expr_context = context.as_expression(block, &mut emitter);
+                        let (image, image_span) = self
+                            .parse_general_expression_with_span(lexer, expr_context.reborrow())?;
+                        lexer.expect(Token::Separator(','))?;
                         let arrayed = match *expr_context.resolve_type(image)? {
                             crate::TypeInner::Image { arrayed, .. } => arrayed,
                             _ => return Err(Error::BadTexture(image_span)),

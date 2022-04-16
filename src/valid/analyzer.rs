@@ -444,6 +444,7 @@ impl FunctionInfo {
                         // these are nasty aliases, but these idents are too long and break rustfmt
                         let ub_st = super::Capabilities::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING;
                         let st_sb = super::Capabilities::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING;
+                        let sampler = super::Capabilities::SAMPLER_NON_UNIFORM_INDEXING;
 
                         // We're a binding array, so lets use the type of _what_ we are array of to determine if we can non-uniformly index it.
                         let array_element_ty =
@@ -455,6 +456,7 @@ impl FunctionInfo {
                                 crate::ImageClass::Storage { .. } => ub_st,
                                 _ => st_sb,
                             },
+                            crate::TypeInner::Sampler { .. } => sampler,
                             // If we're anything but an image, assume we're a buffer and use the address space.
                             _ => {
                                 if let E::GlobalVariable(global_handle) = expression_arena[base] {

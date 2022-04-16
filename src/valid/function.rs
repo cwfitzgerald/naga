@@ -823,7 +823,7 @@ impl super::Validator {
         mod_info: &ModuleInfo,
     ) -> Result<FunctionInfo, WithSpan<FunctionError>> {
         #[cfg_attr(not(feature = "validate"), allow(unused_mut))]
-        let mut info = mod_info.process_function(fun, module, self.flags)?;
+        let mut info = mod_info.process_function(fun, module, self.flags, self.capabilities)?;
 
         #[cfg(feature = "validate")]
         for (var_handle, var) in fun.local_variables.iter() {

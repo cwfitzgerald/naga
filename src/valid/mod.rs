@@ -73,6 +73,10 @@ bitflags::bitflags! {
         const FLOAT64 = 0x2;
         /// Support for `Builtin:PrimitiveIndex`.
         const PRIMITIVE_INDEX = 0x4;
+        /// Support for non-uniform indexing of sampled textures and storage buffer arrays.
+        const SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING = 0x8;
+        /// Support for non-uniform indexing of uniform buffers and storage texture arrays.
+        const UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING = 0x10;
     }
 }
 

@@ -137,7 +137,7 @@ impl Writer {
     /// If nothing in `capabilities` appears in the available capabilities
     /// specified in the [`Options`] from which this `Writer` was created,
     /// return an error. The `what` string is used in the error message to
-    /// explain what provoked the requirement. (If no available capabilites were
+    /// explain what provoked the requirement. (If no available capabilities were
     /// given, assume everything is available.)
     ///
     /// The first acceptable capability will be added to this `Writer`'s
@@ -1314,15 +1314,14 @@ impl Writer {
                 binding_array_size: Some(remapped_binding_array_size),
             }) = self.binding_map.get(res_binding)
             {
-                match ir_module.types[global_variable.ty].inner {
-                    crate::TypeInner::BindingArray { base, .. } => {
-                        substitute_inner_type_lookup =
-                            Some(LookupType::Local(LocalType::PointerToBindingArray {
-                                base,
-                                size: remapped_binding_array_size as u64,
-                            }))
-                    }
-                    _ => {}
+                if let crate::TypeInner::BindingArray { base, .. } =
+                    ir_module.types[global_variable.ty].inner
+                {
+                    substitute_inner_type_lookup =
+                        Some(LookupType::Local(LocalType::PointerToBindingArray {
+                            base,
+                            size: remapped_binding_array_size as u64,
+                        }))
                 }
             } else {
             }

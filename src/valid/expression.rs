@@ -117,6 +117,8 @@ pub enum ExpressionError {
     InvalidArgumentType(crate::MathFunction, u32, Handle<crate::Expression>),
     #[error("Atomic result type can't be {0:?} of {1} bytes")]
     InvalidAtomicResultType(crate::ScalarKind, crate::Bytes),
+    #[error("Shader requires capability {0:?}")]
+    MissingCapabilities(super::Capabilities),
 }
 
 #[cfg(feature = "validate")]

@@ -289,12 +289,12 @@ enum LocalType {
     Sampler,
     PointerToBindingArray {
         base: Handle<crate::Type>,
-        size: u64
+        size: u64,
     },
     BindingArray {
         base: Handle<crate::Type>,
-        size: u64
-    }
+        size: u64,
+    },
 }
 
 /// A type encountered during SPIR-V generation.

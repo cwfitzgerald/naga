@@ -227,7 +227,7 @@ pub struct FunctionInfo {
     /// How this function and its callees use this module's globals.
     ///
     /// This is indexed by `Handle<GlobalVariable>` indices. However,
-    /// `FunctionInfo` implements `std::ops::Index<Handle<Globalvariable>>`,
+    /// `FunctionInfo` implements `std::ops::Index<Handle<GlobalVariable>>`,
     /// so you can simply index this struct with a global handle to retrieve
     /// its usage information.
     global_uses: Box<[GlobalUse]>,
@@ -425,17 +425,71 @@ impl FunctionInfo {
         expression_arena: &Arena<crate::Expression>,
         other_functions: &[FunctionInfo],
         resolve_context: &ResolveContext,
+        capabilities: super::Capabilities,
     ) -> Result<(), ExpressionError> {
         use crate::{Expression as E, SampleLevel as Sl};
 
         let mut assignable_global = None;
         let uniformity = match *expression {
-            E::Access { base, index } => Uniformity {
-                non_uniform_result: self
-                    .add_assignable_ref(base, &mut assignable_global)
-                    .or(self.add_ref(index)),
-                requirements: UniformityRequirements::empty(),
-            },
+            E::Access { base, index } => {
+                let base_ty = self[base].ty.inner_with(resolve_context.types);
+
+                // build up the caps needed if this is indexed non-uniformly
+                let mut needed_caps = super::Capabilities::empty();
+                let is_binding_array = match *base_ty {
+                    crate::TypeInner::BindingArray {
+                        base: array_element_ty_handle,
+                        ..
+                    } => {
+                        // these are nasty aliases, but these idents are too long and break rustfmt
+                        let ub_st = super::Capabilities::UNIFORM_BUFFER_AND_STORAGE_TEXTURE_ARRAY_NON_UNIFORM_INDEXING;
+                        let st_sb = super::Capabilities::SAMPLED_TEXTURE_AND_STORAGE_BUFFER_ARRAY_NON_UNIFORM_INDEXING;
+
+                        // We're a binding array, so lets use the type of _what_ we are array of to determine if we can non-uniformly index it.
+                        let array_element_ty =
+                            &resolve_context.types[array_element_ty_handle].inner;
+
+                        needed_caps |= match *array_element_ty {
+                            // If we're an image, use the appropriate limit.
+                            crate::TypeInner::Image { class, .. } => match class {
+                                crate::ImageClass::Storage { .. } => ub_st,
+                                _ => st_sb,
+                            },
+                            // If we're anything but an image, assume we're a buffer and use the address space.
+                            _ => {
+                                if let E::GlobalVariable(global_handle) = expression_arena[base] {
+                                    let global = &resolve_context.global_vars[global_handle];
+                                    match global.space {
+                                        crate::AddressSpace::Uniform => ub_st,
+                                        crate::AddressSpace::Storage { .. } => st_sb,
+                                        _ => unreachable!(),
+                                    }
+                                } else {
+                                    unreachable!()
+                                }
+                            }
+                        };
+
+                        true
+                    }
+                    _ => false,
+                };
+
+                if self[index].uniformity.non_uniform_result.is_some()
+                    && !capabilities.contains(needed_caps)
+                    && is_binding_array
+                {
+                    return Err(ExpressionError::MissingCapabilities(needed_caps));
+                }
+
+                let _ = ();
+                Uniformity {
+                    non_uniform_result: self
+                        .add_assignable_ref(base, &mut assignable_global)
+                        .or(self.add_ref(index)),
+                    requirements: UniformityRequirements::empty(),
+                }
+            }
             E::AccessIndex { base, .. } => Uniformity {
                 non_uniform_result: self.add_assignable_ref(base, &mut assignable_global),
                 requirements: UniformityRequirements::empty(),
@@ -880,6 +934,7 @@ impl ModuleInfo {
         fun: &crate::Function,
         module: &crate::Module,
         flags: ValidationFlags,
+        capabilities: super::Capabilities,
     ) -> Result<FunctionInfo, WithSpan<FunctionError>> {
         let mut info = FunctionInfo {
             flags,
@@ -907,6 +962,7 @@ impl ModuleInfo {
                 &fun.expressions,
                 &self.functions,
                 &resolve_context,
+                capabilities,
             ) {
                 return Err(FunctionError::Expression { handle, error }
                     .with_span_handle(handle, &fun.expressions));
@@ -1025,8 +1081,15 @@ fn uniform_control_flow() {
         arguments: &[],
     };
     for (handle, expression) in expressions.iter() {
-        info.process_expression(handle, expression, &expressions, &[], &resolve_context)
-            .unwrap();
+        info.process_expression(
+            handle,
+            expression,
+            &expressions,
+            &[],
+            &resolve_context,
+            super::Capabilities::empty(),
+        )
+        .unwrap();
     }
     assert_eq!(info[non_uniform_global_expr].ref_count, 1);
     assert_eq!(info[uniform_global_expr].ref_count, 1);

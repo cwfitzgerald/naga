@@ -12,13 +12,13 @@ Texture2D<float4> texture_array_bounded[5] : register(t1);
 Texture2DArray<float4> texture_array_2darray[5] : register(t2);
 Texture2DMS<float4> texture_array_multisampled[5] : register(t3);
 Texture2D<float> texture_array_depth[5] : register(t4);
-RWTexture2D<float4> texture_array_storage[5] : register(u4);
-SamplerState samp[5] : register(s5);
-SamplerComparisonState samp_comp[5] : register(s6);
-cbuffer uni : register(b7) { UniformIndex uni; }
+RWTexture2D<float4> texture_array_storage[5] : register(u5);
+SamplerState samp[5] : register(s6);
+SamplerComparisonState samp_comp[5] : register(s7);
+cbuffer uni : register(b8) { UniformIndex uni; }
 
 struct FragmentInput_main {
-    uint index : LOC0;
+    nointerpolation uint index : LOC0;
 };
 
 int2 NagaDimensions2D(Texture2D<float4> tex)
@@ -59,10 +59,10 @@ float4 main(FragmentInput_main fragmentinput_main) : SV_Target0
 
     uint uniform_index = uni.index;
     uint non_uniform_index = in_.index;
-    i2_ = int2(0.xx);
-    v4_ = float4(0.0.xxxx);
-    float2 uv = float2(0.0.xx);
-    int2 pix = int2(0.xx);
+    i2_ = (0).xx;
+    v4_ = (0.0).xxxx;
+    float2 uv = (0.0).xx;
+    int2 pix = (0).xx;
     int2 _expr27 = i2_;
     i2_ = (_expr27 + NagaDimensions2D(texture_array_unbounded[0]));
     int2 _expr32 = i2_;
@@ -168,10 +168,16 @@ float4 main(FragmentInput_main fragmentinput_main) : SV_Target0
     float4 _expr240 = v4_;
     float4 _expr244 = texture_array_bounded[NonUniformResourceIndex(non_uniform_index)].SampleLevel(samp[NonUniformResourceIndex(non_uniform_index)], uv, 0.0);
     v4_ = (_expr240 + _expr244);
-    int2 _expr246 = i2_;
-    int _expr247 = i1_;
-    float2 v2_ = float2((_expr246 + int2(_expr247.xx)));
-    float4 _expr251 = v4_;
-    float _expr258 = v1_;
-    return ((_expr251 + float4(v2_.x, v2_.y, v2_.x, v2_.y)) + float4(_expr258.xxxx));
+    float4 _expr248 = v4_;
+    texture_array_storage[0][pix] = _expr248;
+    float4 _expr250 = v4_;
+    texture_array_storage[uniform_index][pix] = _expr250;
+    float4 _expr252 = v4_;
+    texture_array_storage[NonUniformResourceIndex(non_uniform_index)][pix] = _expr252;
+    int2 _expr253 = i2_;
+    int _expr254 = i1_;
+    float2 v2_ = float2((_expr253 + (_expr254).xx));
+    float4 _expr258 = v4_;
+    float _expr265 = v1_;
+    return ((_expr258 + float4(v2_.x, v2_.y, v2_.x, v2_.y)) + (_expr265).xxxx);
 }

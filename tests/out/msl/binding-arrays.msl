@@ -24,6 +24,7 @@ fragment main_Output main_(
 , metal::array<metal::texture2d_array<float, metal::access::sample>, 5> texture_array_2darray [[user(fake0)]]
 , metal::array<metal::texture2d_ms<float, metal::access::read>, 5> texture_array_multisampled [[user(fake0)]]
 , metal::array<metal::depth2d<float, metal::access::sample>, 5> texture_array_depth [[user(fake0)]]
+, metal::array<metal::texture2d<float, metal::access::write>, 5> texture_array_storage [[user(fake0)]]
 , metal::array<metal::sampler, 5> samp [[user(fake0)]]
 , metal::array<metal::sampler, 5> samp_comp [[user(fake0)]]
 , constant UniformIndex& uni [[user(fake0)]]
@@ -144,10 +145,16 @@ fragment main_Output main_(
     metal::float4 _e240 = v4_;
     metal::float4 _e244 = texture_array_bounded[non_uniform_index].sample(samp[non_uniform_index], uv, metal::level(0.0));
     v4_ = _e240 + _e244;
-    metal::int2 _e246 = i2_;
-    int _e247 = i1_;
-    metal::float2 v2_ = static_cast<metal::float2>(_e246 + metal::int2(_e247));
-    metal::float4 _e251 = v4_;
-    float _e258 = v1_;
-    return main_Output { (_e251 + metal::float4(v2_.x, v2_.y, v2_.x, v2_.y)) + metal::float4(_e258) };
+    metal::float4 _e248 = v4_;
+    texture_array_storage[0].write(_e248, metal::uint2(pix));
+    metal::float4 _e250 = v4_;
+    texture_array_storage[uniform_index].write(_e250, metal::uint2(pix));
+    metal::float4 _e252 = v4_;
+    texture_array_storage[non_uniform_index].write(_e252, metal::uint2(pix));
+    metal::int2 _e253 = i2_;
+    int _e254 = i1_;
+    metal::float2 v2_ = static_cast<metal::float2>(_e253 + metal::int2(_e254));
+    metal::float4 _e258 = v4_;
+    float _e265 = v1_;
+    return main_Output { (_e258 + metal::float4(v2_.x, v2_.y, v2_.x, v2_.y)) + metal::float4(_e265) };
 }

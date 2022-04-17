@@ -179,7 +179,7 @@ impl<'a> Display for TypeContext<'a> {
                                 ty.name.as_deref().unwrap_or_default(),
                                 self.access
                             );
-                             unreachable!("module is not valid");
+                            unreachable!("module is not valid");
                         };
                         ("texture", "", format.into(), access)
                     }
@@ -260,6 +260,15 @@ impl<'a> TypedGlobalVariable<'a> {
                     class: crate::ImageClass::Storage { access, .. },
                     ..
                 } => access,
+                crate::TypeInner::BindingArray { base, .. } => {
+                    match self.module.types[base].inner {
+                        crate::TypeInner::Image {
+                            class: crate::ImageClass::Storage { access, .. },
+                            ..
+                        } => access,
+                        _ => crate::StorageAccess::default(),
+                    }
+                }
                 _ => crate::StorageAccess::default(),
             },
         };

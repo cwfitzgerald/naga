@@ -1,10 +1,10 @@
 struct UniformIndex {
-    index: u32;
-};
+    index: u32,
+}
 
 struct FragmentIn {
-    @location(0) index: u32;
-};
+    @location(0) index: u32,
+}
 
 @group(0) @binding(0) 
 var texture_array_unbounded: binding_array<texture_2d<f32>>;
@@ -16,16 +16,16 @@ var texture_array_2darray: binding_array<texture_2d_array<f32>,5>;
 var texture_array_multisampled: binding_array<texture_multisampled_2d<f32>,5>;
 @group(0) @binding(4) 
 var texture_array_depth: binding_array<texture_depth_2d,5>;
-@group(0) @binding(4) 
-var texture_array_storage: binding_array<texture_storage_2d<rgba32float,write>,5>;
 @group(0) @binding(5) 
-var samp: binding_array<sampler,5>;
+var texture_array_storage: binding_array<texture_storage_2d<rgba32float,write>,5>;
 @group(0) @binding(6) 
-var samp_comp: binding_array<sampler_comparison,5>;
+var samp: binding_array<sampler,5>;
 @group(0) @binding(7) 
+var samp_comp: binding_array<sampler_comparison,5>;
+@group(0) @binding(8) 
 var<uniform> uni: UniformIndex;
 
-@stage(fragment) 
+@fragment 
 fn main(in: FragmentIn) -> @location(0) vec4<f32> {
     var i1_: i32 = 0;
     var i2_: vec2<i32>;
@@ -155,10 +155,16 @@ fn main(in: FragmentIn) -> @location(0) vec4<f32> {
     let _e240 = v4_;
     let _e244 = textureSampleLevel(texture_array_bounded[non_uniform_index], samp[non_uniform_index], uv, 0.0);
     v4_ = (_e240 + _e244);
-    let _e246 = i2_;
-    let _e247 = i1_;
-    let v2_ = vec2<f32>((_e246 + vec2<i32>(_e247)));
-    let _e251 = v4_;
-    let _e258 = v1_;
-    return ((_e251 + vec4<f32>(v2_.x, v2_.y, v2_.x, v2_.y)) + vec4<f32>(_e258));
+    let _e248 = v4_;
+    textureStore(texture_array_storage[0], pix, _e248);
+    let _e250 = v4_;
+    textureStore(texture_array_storage[uniform_index], pix, _e250);
+    let _e252 = v4_;
+    textureStore(texture_array_storage[non_uniform_index], pix, _e252);
+    let _e253 = i2_;
+    let _e254 = i1_;
+    let v2_ = vec2<f32>((_e253 + vec2<i32>(_e254)));
+    let _e258 = v4_;
+    let _e265 = v1_;
+    return ((_e258 + vec4<f32>(v2_.x, v2_.y, v2_.x, v2_.y)) + vec4<f32>(_e265));
 }
